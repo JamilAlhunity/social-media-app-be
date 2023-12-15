@@ -3,12 +3,16 @@ import { UsersService } from 'modules/users/users.service';
 import { LogUserInDto } from './dto/log-user-in.dto';
 import { ResponseFromServiceI } from 'shared/interfaces/general/response-from-service.interface';
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config/dist';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class LoginService {
 
     constructor(
-        private readonly userService: UsersService
+        private readonly usersService: UsersService,
+        private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) { }
     /**
     * Provided Email and Password
@@ -25,7 +29,7 @@ export class LoginService {
 
         const { email } = logUserInDto;
 
-        const user = this.userService.findUserByEmail(email);
+        const user = this.usersService.findUserByEmail(email);
 
         if (!user)
             throw new HttpException(
@@ -44,8 +48,19 @@ export class LoginService {
                 'User Credentials is incorrect',
                 HttpStatus.UNAUTHORIZED,
             );
+
+        const payload = {
+            sub: user.id,
+        };
+        const accessToken = this.jwtService.sign(payload, {
+            secret: this.configService.get<string>('USER_ACCESS_TOKEN_SECRET')!,
+            expiresIn: this.configService.get<string>(
+                'USER_ACCESS_TOKEN_EXPIRES_IN',
+            )!,
+        });
+
         return {
-            data: user.username,
+            data: accessToken,
             message: 'logged in successfully',
             httpStatus: HttpStatus.OK,
         };
