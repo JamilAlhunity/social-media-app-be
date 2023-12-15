@@ -2,10 +2,13 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { CacheService } from 'core/lib/cache/cache.service';
 
 @Injectable()
 export class UsersService {
   users: User[] = [];
+
+  constructor(private cacheService: CacheService) { }
 
   createUserForAuth(createUserDto: CreateUserDto): User {
     const { email } = createUserDto;
@@ -15,7 +18,7 @@ export class UsersService {
     if (!!user)
       throw new HttpException("Email already exists, please choose another email", HttpStatus.CONFLICT)
 
-    let length: number = this.users.length;
+    let length: number = this.users.length + 1;
 
     const createdUser = new User({
       ...createUserDto,
@@ -47,8 +50,14 @@ export class UsersService {
     };
   }
 
-  remove(id: number) {
-    return this.users.filter(user => user.id !== id)
+  async remove(id: number) {
+    this.users = this.users.filter(user => user.id !== id);
+    await this.cacheService.del(id + '');
+    return {
+      data: this.users,
+      message: 'deleted User Successfully',
+      statusCode: HttpStatus.OK,
+    };
   }
 
   findUserByEmail(email: string) {
