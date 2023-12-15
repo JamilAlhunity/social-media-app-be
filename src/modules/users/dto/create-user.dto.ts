@@ -2,6 +2,8 @@ import { Allow, IsEmail, IsEnum, IsISO8601, IsNotEmpty, IsNumber, IsOptional, Is
 import { IsContainsLowercase } from 'core/decorators/is-contains-lower-case.decorator';
 import { Gender } from 'shared/enums/gender.enum';
 import { ApiProperty } from '@nestjs/swagger/dist/decorators';
+import { i18nValidationMessage } from 'nestjs-i18n';
+import { I18nTranslations } from 'resources/generated/i18n.generated';
 export class CreateUserDto {
 
     @Allow()
@@ -20,7 +22,7 @@ export class CreateUserDto {
     })
     @IsString()
     @IsNotEmpty({
-        message: "Username Should not be empty"
+        message: i18nValidationMessage<I18nTranslations>('validation.isNotEmpty'),
     })
     username!: string;
 
@@ -38,7 +40,7 @@ export class CreateUserDto {
     @MaxLength(320)
     @MinLength(5)
     @IsEmail(undefined, {
-        message: "Wrong Email Type"
+        message: i18nValidationMessage<I18nTranslations>('validation.email'),
     })
     @IsString()
     @IsNotEmpty()
@@ -59,7 +61,9 @@ export class CreateUserDto {
     @MinLength(8)
     @IsString()
     @IsContainsLowercase({
-        message: 'Password should contain lowercase'
+        message: i18nValidationMessage<I18nTranslations>(
+            'validation.passwordContains.lowercase',
+        ),
     })
     @IsNotEmpty()
     password!: string;

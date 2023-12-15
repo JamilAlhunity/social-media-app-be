@@ -5,7 +5,14 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { RedisClientOptions } from 'redis';
 import * as Joi from 'joi';
 import { ConfigService } from '@nestjs/config/dist';
-
+import {
+    AcceptLanguageResolver,
+    CookieResolver,
+    HeaderResolver,
+    I18nOptions,
+    QueryResolver,
+} from 'nestjs-i18n';
+import { join } from 'path';
 export const jwtOptions: JwtModuleAsyncOptions = {
     useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('USER_ACCESS_TOKEN_SECRET')!,
@@ -45,4 +52,22 @@ export const configOptions: ConfigModuleOptions = {
         PREFIX: Joi.string().min(3).max(10).required(),
         APP_NAME: Joi.string().min(3).max(30).required(),
     }),
+};
+
+
+export const i18nOptions: I18nOptions = {
+    fallbackLanguage: 'en',
+    loaderOptions: {
+        path: join(__dirname, '../../resources/i18n'),
+        watch: true,
+    },
+    typesOutputPath: join(
+        `${process.cwd()}/src/resources/generated/i18n.generated.ts`,
+    ),
+    resolvers: [
+        { use: QueryResolver, options: ['lang', 'locale', 'l'] },
+        new HeaderResolver(['x-custom-lang']),
+        AcceptLanguageResolver,
+        new CookieResolver(['lang', 'locale', 'l']),
+    ],
 };
